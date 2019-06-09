@@ -4,6 +4,8 @@ set -eo pipefail
 FLAVOR=$1
 MODE=$2
 DEBUG=$3
+SYNC_SECRET=$4
+SYNC_SOURCE=$5
 
 if [ -z "$FLAVOR" ] || [ ! -d /srv/explorer/static/$FLAVOR ]; then
     echo "Please provide bitcoin-testnet, bitcoin-mainnet or liquid-mainnet as a parameter"
@@ -126,6 +128,17 @@ else
 fi
 
 preprocess /srv/explorer/source/contrib/nginx.conf.in /etc/nginx/sites-enabled/default
+
+# Make mempool contents available over nginx, protected with SYNC_SECRET
+if [ -n "$SYNC_SECRET" ]; then
+    #echo "$SYNC_SECRET" | htpasswd -c -i /srv/explorer/htpasswd sync
+    echo "sync:{PLAIN}$SYNC_SECRET" > /srv/explorer/htpasswd
+    preprocess /srv/explorer/source/contrib/nginx-sync.conf.in /tmp/nginx-sync.conf
+    # insert nginx-sync.conf inside the server {} block
+    sed -i '/^server {/r /tmp/nginx-sync.conf' /etc/nginx/sites-enabled/default
+    rm /tmp/nginx-sync.conf
+fi
+
 preprocess /srv/explorer/source/cli.sh.in /usr/bin/cli
 if [ "${DAEMON}" == "liquid" ]; then
     DAEMON=bitcoin
@@ -147,5 +160,17 @@ preprocess /srv/explorer/source/contrib/runits/nodedaemon.runit /etc/service/${D
 cp /srv/explorer/source/contrib/runits/nodedaemon-log.runit /etc/service/${DAEMON}/log/run
 cp /srv/explorer/source/contrib/runits/nodedaemon-log-config.runit /data/logs/nodedaemon/config
 chmod +x /etc/service/${DAEMON}/run
+
+# Sync mempool contents from SYNC_SOURCE
+if [ -n "$SYNC_SOURCE" ]; then
+  # wait for bitcoind to fully sync up,
+  /srv/explorer/$DAEMON/bin/${DAEMON}d -conf=/data/.$DAEMON.conf -datadir=/data/$DAEMON -daemon
+  /srv/explorer/source/contrib/bitcoind-wait-sync.sh
+  # stop it,
+  cli stop
+  # then fetch a recent mempool.dat,
+  curl -s -u sync:$SYNC_SECRET $SYNC_SOURCE/data/mempool.dat > /data/$DAEMON/mempool.dat
+  # and let the runit services take over
+fi
 
 exec /srv/explorer/source/contrib/runit_boot.sh
