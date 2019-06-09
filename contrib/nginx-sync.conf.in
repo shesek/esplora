@@ -1,0 +1,6 @@
+location /data/mempool.dat {
+    auth_basic "private";
+    auth_basic_user_file /srv/explorer/htpasswd;
+    alias /data/{DAEMON}/mempool.dat;
+}
+
