@@ -22,6 +22,14 @@ STATIC_DIR=/srv/explorer/static/$FLAVOR
 
 ELECTRS_NETWORK=${NETWORK}
 
+DAEMON_DIR="/data/$DAEMON"
+if [ "$DAEMON-$NETWORK" == "bitcoin-testnet" ]; then
+  DAEMON_DIR="$DAEMON_DIR/regtest"
+  # FIXME: change regtest to testnet
+elif [ "$DAEMON-$NETWORK" == "liquid-mainnet" ]; then
+  DAEMON_DIR="$DAEMON_DIR/liquidv1"
+fi
+
 
 mkdir -p /etc/service/tor/log
 mkdir -p /data/logs/tor
@@ -63,6 +71,7 @@ function preprocess(){
    out_file=$2
    cat $in_file | \
    sed -e "s|{DAEMON}|$DAEMON|g" \
+       -e "s|{DAEMON_DIR}|$DAEMON_DIR|g" \
        -e "s|{NETWORK}|$NETWORK|g" \
        -e "s|{STATIC_DIR}|$STATIC_DIR|g" \
        -e "s|{PARENT_NETWORK}|$PARENT_NETWORK|g" \
