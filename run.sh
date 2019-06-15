@@ -158,10 +158,8 @@ fi
 
 chmod +x /usr/bin/cli
 
-if [ ! -d /data/logs ]; then
-    # initial sync: initialize directories
-    mkdir -p /data/logs /data/${DAEMON} /data/bitcoin
-fi
+# initialize directories
+mkdir -p /data/logs /data/${DAEMON} /data/bitcoin
 
 mkdir -p /etc/service/${DAEMON}/log
 mkdir -p /data/logs/nodedaemon
