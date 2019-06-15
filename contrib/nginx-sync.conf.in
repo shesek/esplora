@@ -1,4 +1,4 @@
-location /data/mempool.dat {
+location /_sync/mempool.dat {
     auth_basic "private";
     auth_basic_user_file /srv/explorer/htpasswd;
     alias {DAEMON_DIR}/mempool.dat;
