@@ -69,20 +69,15 @@ function checkCode(code) {
     throw new Error(`libwally failed with code ${code}`)
 }
 
-function readBytes(ptr, size) {
-  const bytes = new Uint8Array(size)
-  for (let i=0; i<size; i++) bytes[i] = Module.getValue(ptr+i, 'i8')
-  return bytes
-}
+const readBytes = (ptr, size) =>
+  new Uint8Array(Module.HEAP8.subarray(ptr, ptr + size))
 
-function encodeHex(bytes) {
-  return Buffer.from(bytes).toString('hex')
-  //return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
-}
+const encodeHex = bytes =>
+  Buffer.from(bytes).toString('hex')
 
-// Parse hex string encoded in *reverse*
+// Parse hex string encoded in *reverse* (as they're returned by the elementsd jsonrpc)
 function parseHex(str, expected_size) {
-  if (!/^([0-9a-f]{2})+$/.test(str)) throw new Error('Invalid blinders (invalid hex)')
+  if (!/^([0-9a-f]{2})+$/i.test(str)) throw new Error('Invalid blinders (invalid hex)')
   if (str.length != expected_size*2) throw new Error('Invalid blinders (invalid length)')
-  return new Uint8Array(str.match(/.{2}/g).map(hex_byte => parseInt(hex_byte, 16)).reverse())
+  return Buffer.from(str, 'hex').reverse()
 }
