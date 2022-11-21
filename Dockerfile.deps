@@ -3,12 +3,11 @@
 FROM greenaddress/wallycore@sha256:d63d222be12f6b2535e1548aa7f21cf649e2230d6c9e01bd518c23eb0bccd46f AS libwally-wasm
 ARG NO_LIQUID
 ENV EXPORTED_FUNCTIONS="['_malloc', '_free', '_wally_init','_wally_asset_value_commitment','_wally_asset_generator_from_bytes']"
-ENV EXTRA_EXPORTED_RUNTIME_METHODS="['getValue', 'ccall']"
-ENV EMCC_OPTIONS="-s MODULARIZE=1 -s EXPORT_NAME=InitWally"
+ENV EXPORTED_RUNTIME_METHODS="['getValue','ccall']"
 RUN sh -c '[ -n "$NO_LIQUID" ] && mkdir -p /wally/wally_dist || ( \
     cd /opt/emsdk && . ./emsdk_env.sh \
     && git clone --no-checkout https://github.com/elementsproject/libwally-core /wally \
-    && cd /wally && git checkout ea984fc07f4f450b33d4eb78756f25f553e60b44 \
+    && cd /wally && git checkout 1cf3405396dfa11590c0bcbe349b4a93f0d91f95 \
     && git submodule sync --recursive && git submodule update --init --recursive \
     && ./tools/build_wasm.sh --enable-elements)'
 

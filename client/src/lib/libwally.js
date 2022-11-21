@@ -20,7 +20,7 @@ export function load() {
 }
 
 // Simple wrapper to execute both asset_generator_from_bytes and asset_value_commitment,
-// with hex conversions
+// with hex conversions. `value` is expected to be a BigInt.
 export function generate_commitments(value, asset_hex, value_blinder_hex, asset_blinder_hex) {
   const asset = parseHex(asset_hex, ASSET_TAG_LEN)
       , value_blinder = parseHex(value_blinder_hex, BLINDING_FACTOR_LEN)
@@ -49,15 +49,11 @@ export function asset_generator_from_bytes(asset, asset_blinder) {
 }
 
 export function asset_value_commitment(value, value_blinder, asset_commitment) {
-  // Emscripten transforms int64 function arguments into two int32 arguments, see:
-  // https://emscripten.org/docs/getting_started/FAQ.html#how-do-i-pass-int64-t-and-uint64-t-values-from-js-into-wasm-functions
-  const [value_lo, value_hi] = split_int52_lo_hi(value)
-
   const value_commitment_ptr = Module._malloc(ASSET_COMMITMENT_LEN)
   checkCode(Module.ccall('wally_asset_value_commitment'
     , 'number'
-    , [ 'number', 'number', 'array', 'number', 'array', 'number', 'number', 'number' ]
-    , [ value_lo, value_hi
+    , [ 'number', 'array', 'number', 'array', 'number', 'number', 'number' ]
+    , [ value
       , value_blinder, value_blinder.length
       , asset_commitment, asset_commitment.length
       , value_commitment_ptr, ASSET_COMMITMENT_LEN
@@ -77,20 +73,6 @@ function readBytes(ptr, size) {
   const bytes = new Uint8Array(size)
   for (let i=0; i<size; i++) bytes[i] = Module.getValue(ptr+i, 'i8')
   return bytes
-}
-
-// Split a 52-bit JavaScript number into two 32-bits numbers for the low and high bits
-// https://stackoverflow.com/a/19274574
-function split_int52_lo_hi(i) {
-    let lo = i | 0
-    if (lo < 0) lo += 4294967296
-
-    let hi = i - lo
-    hi /= 4294967296
-
-    if ((hi < 0) || (hi >= 1048576)) throw new Error ("not an int52: "+i)
-
-    return [ lo, hi ]
 }
 
 function encodeHex(bytes) {

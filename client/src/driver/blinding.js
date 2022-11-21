@@ -75,7 +75,7 @@ function parseBlinders(str) {
 
   while (parts.length) {
     blinders.push({
-      value: verifyNum(parts.shift())
+      value: verifyBigInt(parts.shift())
     , asset: verifyHex32(parts.shift())
     , value_blinder: verifyHex32(parts.shift())
     , asset_blinder: verifyHex32(parts.shift())
@@ -84,9 +84,9 @@ function parseBlinders(str) {
   return blinders
 }
 
-function verifyNum(num) {
-  if (!+num) throw new Error('Invalid blinding data (invalid number)')
-  return +num
+function verifyBigInt(num) {
+  if (!num || !/^\d+$/.test(num)) throw new Error('Invalid blinding data (invalid number)')
+  return BigInt(num)
 }
 function verifyHex32(str) {
   if (!str || !/^[0-9a-f]{64}$/i.test(str)) throw new Error('Invalid blinding data (invalid hex)')
